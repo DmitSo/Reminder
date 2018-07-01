@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Reminder</string>
+    <string name="action_settings">Settings</string>
+    <string name="caption">Caption</string>
+    <string name="use_date">Use date</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="save">Save</string>
+    <string name="enter_content">Enter content</string>
+    <string name="values_not_valid">Values are not valid</string>
+</resources>
