@@ -21,7 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddValueActivity" />
+        <activity
+            android:name=".AddValueActivity"
+            android:screenOrientation="portrait" />
 
         <!--<receiver android:name=".ReminderReceiver" />-->
 
