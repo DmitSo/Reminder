@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 Intent intent = new Intent(getApplicationContext(), AddValueActivity.class);
                 intent.putExtra("activity_action", EDIT_VALUE_REQUEST_CODE);
                 intent.putExtra("caption", value.caption);
-                intent.putExtra("date", Note.format.format(value.reminderDate));
+                intent.putExtra("date", value.reminderDate == null ? "" : Note.format.format(value.reminderDate));
                 intent.putExtra("content", value.content);
                 startActivityForResult(intent, EDIT_VALUE_REQUEST_CODE);
             }
