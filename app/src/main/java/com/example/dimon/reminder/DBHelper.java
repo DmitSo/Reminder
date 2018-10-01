@@ -9,15 +9,17 @@ import android.database.sqlite.SQLiteOpenHelper;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 
 class DBHelper extends SQLiteOpenHelper {
-    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-    public static final int DB_VERSION = 2;
-    public static final String DB_NAME = "Reminders";
-    public static final String DB_FILE = "remindersDb.db";
-    SQLiteDatabase db;
+    //public static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+    private static final int DB_VERSION = 2;
+    private static final String DB_NAME = "Reminders";
+    private static final String DB_FILE = "remindersDb.db";
+
+    private SQLiteDatabase db;
 
     public DBHelper(Context context){
         super(context, DB_FILE, null, DB_VERSION);
@@ -38,6 +40,10 @@ class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    /**
+     * Adds following value to the database
+     * @param note Value you want to add in DB
+     */
     public void writeNoteToDb(Note note){
         db = this.getReadableDatabase();
 
@@ -45,6 +51,11 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    /**
+     * Updates value with following ID in the database using following Note value
+     * @param id Entry ID which needs to be updated with following Note value
+     * @param editedValue Value which need to be inserted instead of value specified by ID in DB
+     */
     public void editNote(int id, Note editedValue){
         db = this.getReadableDatabase();
         String whereStatement = "id =" + id;
@@ -52,30 +63,48 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    /**
+     * Removes value with following ID in the database
+     * @param id Entry ID which needs to be removed
+     */
+    public void removeNote(int id){
+        db = this.getReadableDatabase();
+        String whereStatement = "id =" + id;
+        db.delete(DB_NAME, whereStatement, null);
+        db.close();
+    }
+
+    /**
+     * Makes ContentValues variable for inserting it in the database based on Note value
+     * @param note Value which should be converted to ContentValue form
+     * @return ContentValues value based on information in Note value
+     */
     private ContentValues formContentValues(Note note){
         ContentValues contentValues = new ContentValues();
 
-        String date = "";
-        String content = "";
-        if (note.reminderDate != null)
-            date = dateFormat.format(note.reminderDate);
-        if (note.content != null)
-            content = note.content;
+        String date = note.getReminderDate() == null
+                ? ""
+                : String.valueOf((note.getReminderDate()).getTime());
 
-        contentValues.put("caption", note.caption);
+        String content = note.getContent() == null ? "" : note.getContent();
+
+        contentValues.put("caption", note.getCaption());
         contentValues.put("content", content);
         contentValues.put("date", date);
 
         return contentValues;
     }
 
+    /**
+     * Gets all values in REMINDERS table from DB
+     * @return Notes in database
+     */
     public HashMap<String, Note> readNotesFromDb(){
         db = this.getReadableDatabase();
         Cursor c = db.query(DB_NAME, null, null,
                 null, null, null, null);
 
         HashMap<String, Note> notes = new HashMap<>();
-        //ArrayList<Note> notes = new ArrayList<>();
 
         if (c.moveToFirst()){
             int idColIndex = c.getColumnIndex("id");
@@ -83,22 +112,22 @@ class DBHelper extends SQLiteOpenHelper {
             int dateColIndex = c.getColumnIndex("date");
             int contentColIndex = c.getColumnIndex("content");
 
-            do{
+            do {
                 int id = c.getInt(idColIndex);
                 String caption = c.getString(captionColIndex);
-                String date = c.getString(dateColIndex);
+                String dateStr = c.getString(dateColIndex);
                 String content = c.getString(contentColIndex);
-                if (date == null)
-                    date = "";
+
+                Date date = null;
+                if (dateStr.length() != 0) {
+                    date = new Date();
+                    date.setTime(Long.parseLong(dateStr));
+                }
                 if (content == null)
                     content = "";
 
-                try {
-                    notes.put(Integer.toString(id), new Note(caption, date, content));
-                }
-                catch (ParseException e){
-                    notes.put(Integer.toString(id), new Note(caption, content));
-                }
+                notes.put(Integer.toString(id), new Note(caption, date, content));
+
             }while(c.moveToNext());
         }
         c.close();

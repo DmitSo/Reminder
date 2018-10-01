@@ -13,30 +13,34 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+/**
+ * Adapter for list of notes in MainActivity
+ */
 public class NotesListAdapter extends BaseAdapter {
+    // Date format used if the note's date is not today
+    private static final SimpleDateFormat dateFormatFull  = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    // Date format used if the note's date is today
+    private static final SimpleDateFormat dateFormatShort = new SimpleDateFormat("HH:mm");
 
-    public static final SimpleDateFormat dateFormatFull  = new SimpleDateFormat("dd MMM yyyy HH:mm");
-    public static final SimpleDateFormat dateFormatShort = new SimpleDateFormat("HH:mm");
+    private LayoutInflater mLayoutInflater;
+    private ArrayList<Note> mNotes;
 
-    private LayoutInflater LInflater;
-    private ArrayList<Note> list;
 
-    public NotesListAdapter(Context context, ArrayList<Note> data) {
-
-        list = data;
-        LInflater = (LayoutInflater) context
+    protected NotesListAdapter(Context context, ArrayList<Note> data) {
+        mNotes = data;
+        mLayoutInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
 
     @Override
     public int getCount() {
-        return list.size();
+        return mNotes.size();
     }
 
     @Override
     public Note getItem(int position) {
-        return list.get(position);
+        return mNotes.get(position);
     }
 
     @Override
@@ -44,50 +48,49 @@ public class NotesListAdapter extends BaseAdapter {
         return position;
     }
 
-
+    /**
+     * Generates View for note
+     */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
         ViewHolder holder;
         View v = convertView;
         Date today = getDateWithoutTime(new Date());
 
-        /*
-         * В том случае, если вид элемента не создан, производится его создание
-         * с помощью ViewHolder и тегирование данного элемента конкретным holder объектом
-         */
+        // If element's view isn't created then ViewHolder creates it
         if (v == null) {
             holder = new ViewHolder();
-            v = LInflater.inflate(R.layout.reminders_list_element, parent, false);
-            holder.caption = (TextView)v.findViewById(R.id.tvCaption);
-            holder.date = (TextView)v.findViewById(R.id.tvDate);
-            holder.content = (TextView)v.findViewById(R.id.tvContent);
+            v = mLayoutInflater.inflate(R.layout.list_element, parent, false);
+
+            holder.caption = v.findViewById(R.id.tvCaption);
+            holder.date = v.findViewById(R.id.tvDate);
+            holder.content = v.findViewById(R.id.tvContent);
 
             v.setTag(holder);
         }
 
-        /*
-         * После того, как все элементы определены, производится соотнесение
-         * внешнего вида, данных и конкретной позиции в ListView.
-         * После чего из ArrayList забираются данные для элемента ListView и
-         * передаются во внешний вид элемента
-         */
         holder = (ViewHolder) v.getTag();
         Note note = getData(position);
 
         String date = "";
-        if(note.reminderDate != null)
-            date = getDateWithoutTime(note.reminderDate).compareTo(today) == 0 ?
-                    dateFormatShort.format(note.reminderDate) :
-                    dateFormatFull.format(note.reminderDate);
+        if(note.getReminderDate() != null)
+            date = getDateWithoutTime(note.getReminderDate()).compareTo(today) == 0 ?
+                    dateFormatShort.format(note.getReminderDate()) :
+                    dateFormatFull.format(note.getReminderDate());
 
-        holder.caption.setText(note.caption);
+        holder.caption.setText(note.getCaption());
         holder.date.setText(date);
-        holder.content.setText(note.content);
+        holder.content.setText(note.getContent());
 
         return v;
     }
 
+
+    /**
+     * Resets given date's time
+     * @param date Date where you want to reset time
+     * @return Date with time equal 00:00:00
+     */
     private static Date getDateWithoutTime(Date date){
         Calendar calendar = new GregorianCalendar();
         calendar.setTime(date);
@@ -99,18 +102,19 @@ public class NotesListAdapter extends BaseAdapter {
         return calendar.getTime();
     }
 
-    /*
-     * Метод, который забирает объект из ArrayList для дальнейшей работы с ним
-     * и передачи его данных в элемент ListView
+    /**
+     * Method which takes object from ArrayList at specified position
+     * @param position Position of the requested element
+     * @return Note object from ArrayList at specified index
      */
-    Note getData(int position) {
+    private Note getData(int position) {
         return (getItem(position));
     }
 
-    /*
-     * Данная структура данных необходима для того, чтобы при пролистывании
-     * большого списка не возникало артефактов и перескакивания данных с одной позиции ListView
-     * на другую, что достигается тегированием каждого элемента ListView
+    /**
+     * This structure are used to avoid such problems as
+     * artifacts and jumping of information from one ListView to another
+     * (tagging helps in it)
      */
     private static class ViewHolder {
         private TextView caption;

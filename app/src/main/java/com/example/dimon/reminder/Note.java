@@ -1,51 +1,101 @@
 package com.example.dimon.reminder;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Note {
-    public static final SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+public class Note implements Parcelable {
+    public static final Parcelable.Creator<Note> CREATOR = new Parcelable.Creator<Note>() {
 
-    String caption;
-    Date reminderDate;
-    String content;
+        @Override
+        public Note createFromParcel(Parcel source) {
+            return new Note(source);
+        }
 
-    public Note(String caption, String reminderDate, String content) throws ParseException{
-        this(caption, format.parse(reminderDate), content);
-    }
+        @Override
+        public Note[] newArray(int size) {
+            return new Note[size];
+        }
+    };
 
+    private String mCaption;
+    private Date mReminderDate;
+    private String mContent;
+
+    /**
+     * Constructor for Note with setting reminder date
+     * @param caption Caption of the note
+     * @param reminderDate Date for reminder
+     * @param content content of the note
+     */
     public Note(String caption, Date reminderDate, String content){
         this(caption, content);
-        this.reminderDate = reminderDate;
+        this.mReminderDate = reminderDate;
     }
 
+    /**
+     * Constructor for Note without setting reminder date
+     * @param caption Caption of the note
+     * @param content content of the note
+     */
     public Note(String caption, String content){
-        this.caption = caption;
-        this.content = content;
+        this.mCaption = caption;
+        this.mContent = content;
     }
+
+    public Note(Parcel in) {
+        String[] data = new String[3];
+        in.readStringArray(data);
+        mCaption = data[0];
+        if (data[1].length() != 0 ){
+            mReminderDate = new Date();
+            mReminderDate.setTime(Long.parseLong(data[1]));
+        }
+        mContent = data[2];
+    }
+
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeStringArray(new String[]
+                {
+                        mCaption,
+                        mReminderDate == null ? "" : String.valueOf(mReminderDate.getTime()),
+                        mContent
+                });
+    }
+
 
     public String getCaption() {
-        return caption;
+        return mCaption;
     }
 
     public Date getReminderDate() {
-        return reminderDate;
+        return mReminderDate;
     }
 
     public String getContent() {
-        return content;
+        return mContent;
     }
 
     public void setCaption(String caption) {
-        this.caption = caption;
+        this.mCaption = caption;
     }
 
     public void setContent(String content) {
-        this.content = content;
+        this.mContent = content;
     }
 
     public void setReminderDate(Date reminderDate) {
-        this.reminderDate = reminderDate;
+        this.mReminderDate = reminderDate;
     }
+
 }

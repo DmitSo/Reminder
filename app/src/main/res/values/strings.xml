@@ -8,4 +8,5 @@
     <string name="save">Save</string>
     <string name="enter_content">Enter content</string>
     <string name="values_not_valid">Values are not valid</string>
+    <string name="remove">Remove</string>
 </resources>

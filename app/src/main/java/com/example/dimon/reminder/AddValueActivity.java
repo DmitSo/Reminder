@@ -18,132 +18,163 @@ import android.widget.Toast;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 public class AddValueActivity extends AppCompatActivity {
-    Calendar dateAndTime = null;
+    int mActivityAction;            // Defines type of action: add or edit value
+    Calendar mDateAndTime = null;   // Date/time of the note
+
     Button btnDate, btnTime;
     Switch swUseDate;
     TextView tvCaption;
     TextView tvContent;
-    int activityAction;
+
+    /**
+     * setting up Time Set Listener (chooses time for reminder)
+     */
+    final TimePickerDialog.OnTimeSetListener t = new TimePickerDialog.OnTimeSetListener() {
+        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+            mDateAndTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            mDateAndTime.set(Calendar.MINUTE, minute);
+            updateTimeButtonText();
+        }
+    };
+
+    /**
+     * setting up Date Set Listener (chooses date for reminder)
+     */
+    final DatePickerDialog.OnDateSetListener d = new DatePickerDialog.OnDateSetListener() {
+        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+            mDateAndTime.set(Calendar.YEAR, year);
+            mDateAndTime.set(Calendar.MONTH, monthOfYear);
+            mDateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            updateDateButtonText();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_value);
 
-        btnDate = findViewById(R.id.btnDate);
-        btnTime = findViewById(R.id.btnTime);
-        swUseDate = findViewById(R.id.swUseDate);
-        tvCaption = findViewById(R.id.etCaption);
-        tvContent = findViewById(R.id.et2Content);
+        btnDate = findViewById(R.id.button_date);
+        btnTime = findViewById(R.id.button_time);
+        swUseDate = findViewById(R.id.switch_date);
+        tvCaption = findViewById(R.id.edit_text_caption);
+        tvContent = findViewById(R.id.edit_text_content);
 
-        activityAction = getIntent().getIntExtra("activity_action", MainActivity.ADD_VALUE_REQUEST_CODE);
-        if(activityAction == MainActivity.EDIT_VALUE_REQUEST_CODE){
-            Intent currentIntent = getIntent();
-            tvCaption.setText(currentIntent.getStringExtra("caption"));
-            tvContent.setText(currentIntent.getStringExtra("content"));
-            try {
-                Date date = Note.format.parse(currentIntent.getStringExtra("date"));
-                dateAndTime = Calendar.getInstance();
-                dateAndTime.setTime(date);
-            }catch (ParseException pex){
-                dateAndTime = null;
-                Log.d(MainActivity.DEBUG_LOG, "Parse exception of datetime, msg = " + pex.getMessage());
-            }
+        Intent currentIntent = getIntent();
+        mActivityAction = currentIntent.getIntExtra("EXTRA_ACTIVITY_ACTION",
+                MainActivity.ADD_VALUE_REQUEST_CODE);
 
-            if (dateAndTime != null){
+        if (mActivityAction == MainActivity.EDIT_VALUE_REQUEST_CODE){
+            Note value = currentIntent.getParcelableExtra("EXTRA_VALUE");
+            tvCaption.setText(value.getCaption());
+            tvContent.setText(value.getContent());
+
+            Date date = value.getReminderDate();
+
+            if (date != null){
+                mDateAndTime = Calendar.getInstance();
+                mDateAndTime.setTime(date);
                 swUseDate.setChecked(true);
-                setInitialDate();
-                setInitialTime();
-                setDateTimeButtonsActivity(btnDate);
+                updateDateButtonText();
+                updateTimeButtonText();
+                setDateTimeButtonsActivity();
             }
-
         }
     }
 
-    // установка обработчика выбора времени
-    TimePickerDialog.OnTimeSetListener t = new TimePickerDialog.OnTimeSetListener() {
-        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            dateAndTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            dateAndTime.set(Calendar.MINUTE, minute);
-            setInitialTime();
-        }
-    };
 
-    // установка обработчика выбора даты
-    DatePickerDialog.OnDateSetListener d = new DatePickerDialog.OnDateSetListener() {
-        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-            dateAndTime.set(Calendar.YEAR, year);
-            dateAndTime.set(Calendar.MONTH, monthOfYear);
-            dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            setInitialDate();
-        }
-    };
-
-    // установка начальных даты
-    private void setInitialDate() {
+    /**
+     * Setting up text in btnDate. The text shows date from mDateAndTime variable
+      */
+    private void updateDateButtonText() {
         btnDate.setText(DateUtils.formatDateTime(this,
-                dateAndTime.getTimeInMillis(),
+                mDateAndTime.getTimeInMillis(),
                 DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR));
     }
 
-
-    // установка начального времени
-    private void setInitialTime() {
+    /**
+     * Setting up text in btnTime. The text shows time from mDateAndTime variable
+     */
+    private void updateTimeButtonText() {
         btnTime.setText(DateUtils.formatDateTime(this,
-                dateAndTime.getTimeInMillis(), DateUtils.FORMAT_SHOW_TIME));
+                mDateAndTime.getTimeInMillis(), DateUtils.FORMAT_SHOW_TIME));
     }
 
-    // установить активность кнопок
+    /**
+     * Setting up btnDate's and btnTime's content and availability
+     * according to swUseDate checked state
+     */
+    public void setDateTimeButtonsActivity(){
+        setDateTimeButtonsActivity(null);
+    }
+
+    /**
+     * Setting up btnDate's and btnTime's content and availability
+     * according to swUseDate checked state
+     * @param v Not used here, required for making possible to set this method
+     *          as OnClickListener for switch
+     */
     public void setDateTimeButtonsActivity(View v){
-        dateAndTime = swUseDate.isChecked()
-                ? (dateAndTime != null ? dateAndTime : Calendar.getInstance() )
-                : null;
-        btnDate.setEnabled(swUseDate.isChecked());
-        btnDate.setText(swUseDate.isChecked()
-                ? DateUtils.formatDateTime(this, dateAndTime.getTimeInMillis(),
-                DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR)
-                : getResources().getText(R.string.date));
+        boolean useDate = swUseDate.isChecked();
 
-        btnTime.setEnabled(swUseDate.isChecked());
-        btnTime.setText(swUseDate.isChecked()
-                ? DateUtils.formatDateTime(this, dateAndTime.getTimeInMillis(),
-                        DateUtils.FORMAT_SHOW_TIME)
-                : getResources().getText(R.string.time));
+        btnDate.setEnabled(useDate);
+        btnTime.setEnabled(useDate);
+        if (useDate){
+            if (mDateAndTime == null) mDateAndTime = Calendar.getInstance();
+            updateDateButtonText();
+            updateTimeButtonText();
+        }
+        else{
+            mDateAndTime = null;
+            btnDate.setText(getString(R.string.date));
+            btnTime.setText(getString(R.string.time));
+        }
     }
 
-    // отображаем диалоговое окно для выбора даты
-    public void setDate(View v) {
-        new DatePickerDialog(this, d,
-                dateAndTime.get(Calendar.YEAR),
-                dateAndTime.get(Calendar.MONTH),
-                dateAndTime.get(Calendar.DAY_OF_MONTH))
+    /**
+     * Shows Date Picker to choose date for reminder
+     * @param v Not used here, required for making possible to set this method
+     *          as OnClickListener for button
+     */
+    public void showDatePicker(View v) {
+        new DatePickerDialog(this,
+                d,
+                mDateAndTime.get(Calendar.YEAR),
+                mDateAndTime.get(Calendar.MONTH),
+                mDateAndTime.get(Calendar.DAY_OF_MONTH))
                 .show();
     }
 
-    // отображаем диалоговое окно для выбора времени
-    public void setTime(View v) {
-        new TimePickerDialog(this, t,
-                dateAndTime.get(Calendar.HOUR_OF_DAY),
-                dateAndTime.get(Calendar.MINUTE), true)
+    /**
+     * Shows Time Picker to choose time for reminder
+     * @param v Not used here, required for making possible to set this method
+     *          as OnClickListener for button
+     */
+    public void showTimePicker(View v) {
+        new TimePickerDialog(this,
+                t,
+                mDateAndTime.get(Calendar.HOUR_OF_DAY),
+                mDateAndTime.get(Calendar.MINUTE), true)
                 .show();
     }
 
-    // Формирование данных для создания записи в родительском окне
+    /**
+     * Preparing data of note to be sent as result to MainActivity
+     * @param v Not used here, required for making possible to set this method
+     *          as OnClickListener for button
+     */
     public void applyNoteAndFinish(View v) {
         if(isValuesValid()) {
             Intent intent = new Intent();
-            try {
-                long dateMills = dateAndTime != null ? dateAndTime.getTimeInMillis() : 0;
-                intent.putExtra("note_caption", tvCaption.getText().toString());
-                intent.putExtra("note_content", tvContent.getText().toString());
-                intent.putExtra("note_date", Long.toString(dateMills));
-                // idk is better to use long digit or string format for translating dates btw activities
-            }catch (Exception exc){
-                Toast.makeText(getApplicationContext(), exc.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-            }
+
+            Note value = new Note(tvCaption.getText().toString(),
+                    mDateAndTime == null ? null : mDateAndTime.getTime(),
+                    tvContent.getText().toString());
+
+            intent.putExtra("EXTRA_VALUE", value);
+
             setResult(RESULT_OK, intent);
             finish();
         }
@@ -153,6 +184,10 @@ public class AddValueActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Checks if values of the note is valid
+     * @return Values are valid
+     */
     public boolean isValuesValid(){
         return tvCaption.getText().length() != 0;
     }
